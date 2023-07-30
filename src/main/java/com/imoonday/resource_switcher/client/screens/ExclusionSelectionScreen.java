@@ -1,5 +1,7 @@
-package com.imoonday.resource_switcher.client;
+package com.imoonday.resource_switcher.client.screens;
 
+import com.imoonday.resource_switcher.client.Config;
+import com.imoonday.resource_switcher.client.ResourceSwitcher;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -22,20 +24,22 @@ import java.util.List;
 @Environment(EnvType.CLIENT)
 public class ExclusionSelectionScreen extends Screen {
 
-    private ExclusionSelectionListWidget exclusionSelectionList;
     private final Screen parent;
+    private ExclusionSelectionListWidget exclusionSelectionList;
+    final ResourcePackManager packManager;
     boolean changed;
 
-    public ExclusionSelectionScreen(Screen parent) {
-        super(Text.literal("选择排除资源包"));
+    public ExclusionSelectionScreen(Screen parent, ResourcePackManager packManager) {
+        super(Text.translatable("screen.resource_switcher.exclusionSelection.title"));
         this.parent = parent;
+        this.packManager = packManager;
     }
 
     @Override
     public void close() {
         if (client != null) {
             if (changed) {
-                client.reloadResources();
+                client.options.refreshResourcePacks(client.getResourcePackManager());
             }
             client.setScreen(parent);
         }
@@ -46,9 +50,9 @@ public class ExclusionSelectionScreen extends Screen {
     protected void init() {
         this.exclusionSelectionList = new ExclusionSelectionListWidget(this.client);
         this.addSelectableChild(this.exclusionSelectionList);
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("打开选择资源包界面"), button -> {
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.resource_switcher.exclusionSelection.openScreen"), button -> {
             if (client != null) {
-                KeyBindings.openResourcePackManagerScreen(client, this);
+                ResourceSwitcher.openResourcePackManagerScreen(client, this);
             }
         }).dimensions(this.width / 2 - 155, this.height - 38, 150, 20).build());
         this.addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> this.close()).dimensions(this.width / 2 - 155 + 160, this.height - 38, 150, 20).build());
@@ -80,10 +84,10 @@ public class ExclusionSelectionScreen extends Screen {
     class ExclusionSelectionListWidget extends AlwaysSelectedEntryListWidget<ExclusionSelectionListWidget.ResourcePackEntry> {
         public ExclusionSelectionListWidget(MinecraftClient client) {
             super(client, ExclusionSelectionScreen.this.width, ExclusionSelectionScreen.this.height, 32, ExclusionSelectionScreen.this.height - 65 + 4, 18);
-            List<ResourcePackProfile> list = new ArrayList<>(client.getResourcePackManager().getEnabledProfiles());
+            List<ResourcePackProfile> list = new ArrayList<>(packManager.getEnabledProfiles());
             Collections.reverse(list);
             list.stream().filter(profile -> !profile.isAlwaysEnabled()).map(ResourcePackEntry::new).forEach(this::addEntry);
-            client.getResourcePackManager().getProfiles().stream()
+            packManager.getProfiles().stream()
                     .filter(profile -> !profile.isAlwaysEnabled() && !list.contains(profile))
                     .map(ResourcePackEntry::new)
                     .forEach(this::addEntry);
@@ -120,14 +124,20 @@ public class ExclusionSelectionScreen extends Screen {
                     text = text.formatted(Formatting.UNDERLINE);
                 }
                 String name = profile.getName();
-                if (Config.excludedNames.contains(name)) {
+                boolean excluded = Config.SETTINGS.excludedPacks.contains(name);
+                if (excluded) {
                     text = text.formatted(Formatting.STRIKETHROUGH);
                 }
-                if (client.getResourcePackManager().getEnabledProfiles().contains(profile)) {
-                    text = text.append(Text.literal(" (已启用)").formatted(Formatting.GREEN, Formatting.BOLD).styled(style -> style.withStrikethrough(false).withUnderline(false)));
+                if (packManager.getEnabledProfiles().contains(profile)) {
+                    text = text.append(Text.translatable("screen.resource_switcher.exclusionSelection.enabled").formatted(Formatting.GREEN, Formatting.BOLD).styled(style -> style.withStrikethrough(false).withUnderline(false)));
+                } else if (Config.SETTINGS.disabledPacks.contains(name) && !excluded) {
+                    text = text.append(Text.translatable("screen.resource_switcher.exclusionSelection.disabled").formatted(Formatting.GREEN, Formatting.BOLD).styled(style -> style.withStrikethrough(false).withUnderline(false)));
                 }
-                if (Config.excludedNames.contains(name)) {
-                    text = text.append(Text.literal(" (已排除)").formatted(Formatting.RED, Formatting.BOLD).styled(style -> style.withStrikethrough(false).withUnderline(false)));
+                if (excluded) {
+                    text = text.append(Text.translatable("screen.resource_switcher.exclusionSelection.excluded").formatted(Formatting.RED, Formatting.BOLD).styled(style -> style.withStrikethrough(false).withUnderline(false)));
+                }
+                if (Config.SETTINGS.lockedPacks.contains(name)) {
+                    text = text.append(Text.translatable("screen.resource_switcher.exclusionSelection.locked").formatted(Formatting.GOLD, Formatting.BOLD).styled(style -> style.withStrikethrough(false).withUnderline(false)));
                 }
                 context.drawCenteredTextWithShadow(ExclusionSelectionScreen.this.textRenderer, text, ExclusionSelectionListWidget.this.width / 2, y + 1, 0xFFFFFF);
             }
@@ -142,6 +152,7 @@ public class ExclusionSelectionScreen extends Screen {
                         }
                     }
                     case 1 -> switchState();
+                    case 2 -> toggleLock();
                     default -> {
                         return false;
                     }
@@ -151,21 +162,37 @@ public class ExclusionSelectionScreen extends Screen {
             }
 
             private void switchState() {
-                ResourcePackManager manager = ExclusionSelectionListWidget.this.client.getResourcePackManager();
-                if (manager.getEnabledProfiles().contains(profile)) {
-                    manager.disable(profile.getName());
+                String name = profile.getName();
+                if (Config.SETTINGS.lockedPacks.contains(name)) {
+                    return;
+                }
+                if (packManager.getEnabledProfiles().contains(profile)) {
+                    packManager.disable(name);
                 } else {
-                    manager.enable(profile.getName());
+                    packManager.enable(name);
                 }
                 ExclusionSelectionScreen.this.changed = true;
             }
 
             private void switchExclusion() {
                 String name = profile.getName();
-                if (Config.excludedNames.contains(name)) {
-                    Config.excludedNames.remove(name);
+                if (Config.SETTINGS.lockedPacks.contains(name)) {
+                    return;
+                }
+                if (Config.SETTINGS.excludedPacks.contains(name)) {
+                    Config.SETTINGS.excludedPacks.remove(name);
                 } else {
-                    Config.excludedNames.add(name);
+                    Config.SETTINGS.excludedPacks.add(name);
+                }
+                Config.save();
+            }
+
+            private void toggleLock() {
+                String name = profile.getName();
+                if (Config.SETTINGS.lockedPacks.contains(name)) {
+                    Config.SETTINGS.lockedPacks.remove(name);
+                } else {
+                    Config.SETTINGS.lockedPacks.add(name);
                 }
                 Config.save();
             }

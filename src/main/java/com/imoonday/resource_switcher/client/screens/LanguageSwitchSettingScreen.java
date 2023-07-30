@@ -1,5 +1,7 @@
-package com.imoonday.resource_switcher.client;
+package com.imoonday.resource_switcher.client.screens;
 
+import com.imoonday.resource_switcher.client.Config;
+import com.imoonday.resource_switcher.client.ResourceSwitcher;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -17,6 +19,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Language;
 import net.minecraft.util.Util;
 
+@Environment(EnvType.CLIENT)
 public class LanguageSwitchSettingScreen extends Screen {
 
     private final Screen parent;
@@ -24,7 +27,7 @@ public class LanguageSwitchSettingScreen extends Screen {
     final LanguageManager languageManager;
 
     public LanguageSwitchSettingScreen(Screen parent, LanguageManager languageManager) {
-        super(Text.literal("选择切换语言"));
+        super(Text.translatable("screen.resource_switcher.languageSwitchSetting.title"));
         this.parent = parent;
         this.languageManager = languageManager;
     }
@@ -41,9 +44,9 @@ public class LanguageSwitchSettingScreen extends Screen {
     protected void init() {
         this.languageSwitchSettingList = new LanguageSwitchSettingListWidget(this.client);
         this.addSelectableChild(this.languageSwitchSettingList);
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("打开选择语言界面"), button -> {
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.resource_switcher.languageSwitchSetting.openScreen"), button -> {
             if (client != null) {
-                KeyBindings.openLanguageOptionsScreen(client, this);
+                ResourceSwitcher.openLanguageOptionsScreen(client, this);
             }
         }).dimensions(this.width / 2 - 155, this.height - 38, 150, 20).build());
         this.addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> this.close()).dimensions(this.width / 2 - 155 + 160, this.height - 38, 150, 20).build());
@@ -66,7 +69,7 @@ public class LanguageSwitchSettingScreen extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 16, 0xFFFFFF);
         LanguageSwitchSettingListWidget.LanguageEntry languageEntry = this.languageSwitchSettingList.getSelectedOrNull();
         if (languageEntry != null && client != null) {
-            Text text = Text.literal("主语言：").append(getOrEmpty(Config.mainLanguage)).append(ScreenTexts.SPACE).append(Text.literal("备用语言：").append(getOrEmpty(Config.alternateLanguage))).formatted(Formatting.GRAY);
+            Text text = Text.translatable("screen.resource_switcher.languageSwitchSetting.mainLanguage").append(getOrEmpty(Config.SETTINGS.mainLanguage)).append(ScreenTexts.SPACE).append(Text.translatable("screen.resource_switcher.languageSwitchSetting.alternateLanguage").append(getOrEmpty(Config.SETTINGS.alternateLanguage))).formatted(Formatting.GRAY);
             context.drawCenteredTextWithShadow(this.textRenderer, text, this.width / 2, this.height - 56, 0x808080);
         }
         super.render(context, mouseX, mouseY, delta);
@@ -124,13 +127,13 @@ public class LanguageSwitchSettingScreen extends Screen {
             public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
                 MutableText text = this.languageDefinition.copy();
                 if (languageCode.equals(languageManager.getLanguage())) {
-                    text = text.append(Text.literal(" (当前语言)").formatted(Formatting.AQUA, Formatting.BOLD));
+                    text = text.append(Text.translatable("screen.resource_switcher.languageSwitchSetting.remark.currentLanguage").formatted(Formatting.AQUA, Formatting.BOLD));
                 }
-                if (languageCode.equals(Config.mainLanguage)) {
-                    text = text.append(Text.literal(" (主语言)").formatted(Formatting.GREEN, Formatting.BOLD));
+                if (languageCode.equals(Config.SETTINGS.mainLanguage)) {
+                    text = text.append(Text.translatable("screen.resource_switcher.languageSwitchSetting.remark.mainLanguage").formatted(Formatting.GREEN, Formatting.BOLD));
                 }
-                if (languageCode.equals(Config.alternateLanguage)) {
-                    text = text.append(Text.literal(" (备用语言)").formatted(Formatting.GRAY, Formatting.BOLD));
+                if (languageCode.equals(Config.SETTINGS.alternateLanguage)) {
+                    text = text.append(Text.translatable("screen.resource_switcher.languageSwitchSetting.remark.alternateLanguage").formatted(Formatting.GRAY, Formatting.BOLD));
                 }
                 context.drawCenteredTextWithShadow(LanguageSwitchSettingScreen.this.textRenderer, text, LanguageSwitchSettingListWidget.this.width / 2, y + 1, 0xFFFFFF);
             }
@@ -141,19 +144,20 @@ public class LanguageSwitchSettingScreen extends Screen {
                     case 0 -> {
                         this.onPressed();
                         if (Util.getMeasuringTimeMs() - this.clickTime < 250L) {
-                            Config.mainLanguage = languageCode.equals(Config.mainLanguage) ? languageManager.getLanguage() : languageCode;
+                            Config.SETTINGS.mainLanguage = languageCode.equals(Config.SETTINGS.mainLanguage) ? languageManager.getLanguage() : languageCode;
                             Config.save();
                         }
                         this.clickTime = Util.getMeasuringTimeMs();
                     }
                     case 1 -> {
                         this.onPressed();
-                        Config.alternateLanguage = languageCode.equals(Config.alternateLanguage) ? Language.DEFAULT_LANGUAGE : languageCode;
+                        Config.SETTINGS.alternateLanguage = languageCode.equals(Config.SETTINGS.alternateLanguage) ? Language.DEFAULT_LANGUAGE : languageCode;
                         Config.save();
                     }
                     case 2 -> {
                         languageManager.setLanguage(languageCode);
                         client.reloadResources();
+                        client.options.write();
                     }
                     default -> {
                         this.clickTime = Util.getMeasuringTimeMs();

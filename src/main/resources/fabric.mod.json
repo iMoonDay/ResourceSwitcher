@@ -3,7 +3,7 @@
   "id": "resource_switcher",
   "version": "${version}",
   "name": "ResourceSwitcher",
-  "description": "",
+  "description": "Add a more convenient way to change resource packs and languages",
   "authors": [
     "iMoonDay"
   ],
@@ -15,15 +15,9 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "com.imoonday.resource_switcher.client.ResourceSwitcherClient"
-    ],
-    "main": [
-      "com.imoonday.resource_switcher.ResourceSwitcher"
+      "com.imoonday.resource_switcher.client.ResourceSwitcher"
     ]
   },
-  "mixins": [
-    "resource_switcher.mixins.json"
-  ],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric": "*",
