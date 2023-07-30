@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "resource_switcher",
+  "version": "${version}",
+  "name": "ResourceSwitcher",
+  "description": "",
+  "authors": [
+    "iMoonDay"
+  ],
+  "contact": {
+    "repo": "https://github.com/iMoonDay/ResourceSwitcher"
+  },
+  "license": "MIT",
+  "icon": "assets/resource_switcher/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.imoonday.resource_switcher.client.ResourceSwitcherClient"
+    ],
+    "main": [
+      "com.imoonday.resource_switcher.ResourceSwitcher"
+    ]
+  },
+  "mixins": [
+    "resource_switcher.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
