@@ -71,19 +71,24 @@ public class ExclusionSelectionScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         this.exclusionSelectionList.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 16, 0xFFFFFF);
         ExclusionSelectionListWidget.ResourcePackEntry packEntry = this.exclusionSelectionList.getSelectedOrNull();
         if (packEntry != null) {
             context.drawCenteredTextWithShadow(this.textRenderer, packEntry.profile.getDescription(), this.width / 2, this.height - 56, 0x808080);
         }
-        super.render(context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackgroundTexture(context);
     }
 
     @Environment(value = EnvType.CLIENT)
     class ExclusionSelectionListWidget extends AlwaysSelectedEntryListWidget<ExclusionSelectionListWidget.ResourcePackEntry> {
         public ExclusionSelectionListWidget(MinecraftClient client) {
-            super(client, ExclusionSelectionScreen.this.width, ExclusionSelectionScreen.this.height, 32, ExclusionSelectionScreen.this.height - 65 + 4, 18);
+            super(client, ExclusionSelectionScreen.this.width, ExclusionSelectionScreen.this.height - 65 + 4 - 32, 32, 18);
             List<ResourcePackProfile> list = new ArrayList<>(packManager.getEnabledProfiles());
             Collections.reverse(list);
             list.stream().filter(profile -> !profile.isAlwaysEnabled()).map(ResourcePackEntry::new).forEach(this::addEntry);
@@ -91,6 +96,7 @@ public class ExclusionSelectionScreen extends Screen {
                     .filter(profile -> !profile.isAlwaysEnabled() && !list.contains(profile))
                     .map(ResourcePackEntry::new)
                     .forEach(this::addEntry);
+            setRenderBackground(true);
         }
 
         @Override
@@ -101,11 +107,6 @@ public class ExclusionSelectionScreen extends Screen {
         @Override
         public int getRowWidth() {
             return super.getRowWidth() + 50;
-        }
-
-        @Override
-        protected void renderBackground(DrawContext context) {
-            ExclusionSelectionScreen.this.renderBackground(context);
         }
 
         @Environment(value = EnvType.CLIENT)

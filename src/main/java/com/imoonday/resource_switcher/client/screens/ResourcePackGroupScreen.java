@@ -66,11 +66,11 @@ public class ResourcePackGroupScreen extends Screen {
 
         int width1 = (this.width - this.width / 5) / 2;
         this.enabledList = new ResourcePackListWidget(this.client, this.getEnabledProfiles(), false, width1, Text.translatable("screen.resource_switcher.resourcePackGroup.subtitle.selected"));
-        this.enabledList.setLeftPos(this.width - this.enabledList.getRowWidth());
+        this.enabledList.setX(this.width - this.enabledList.getRowWidth());
         this.addSelectableChild(this.enabledList);
 
         this.disabledList = new ResourcePackListWidget(this.client, this.getDisabledProfiles(), true, this.width - this.width / 5 - width1, Text.translatable("screen.resource_switcher.resourcePackGroup.subtitle.available"));
-        this.disabledList.setLeftPos(this.groupList.getRowWidth());
+        this.disabledList.setX(this.groupList.getRowWidth());
         this.addSelectableChild(this.disabledList);
 
         this.upButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.resource_switcher.resourcePackGroup.button.up"), button -> {
@@ -341,6 +341,11 @@ public class ResourcePackGroupScreen extends Screen {
         }
     }
 
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackgroundTexture(context);
+    }
+
     @Environment(value = EnvType.CLIENT)
     class ResourcePackListWidget extends AlwaysSelectedEntryListWidget<ResourcePackListWidget.ResourcePackEntry> {
 
@@ -349,7 +354,7 @@ public class ResourcePackGroupScreen extends Screen {
         private final Text title;
 
         public ResourcePackListWidget(MinecraftClient client, List<ResourcePackProfile> profiles, boolean disabled, int width, Text title) {
-            super(client, width, ResourcePackGroupScreen.this.height, 32, ResourcePackGroupScreen.this.height - 65 + 4, 18);
+            super(client, width, ResourcePackGroupScreen.this.height - 65 + 4 - 32, 32, 18);
             this.profiles = profiles;
             this.disabled = disabled;
             this.title = title;
@@ -363,7 +368,7 @@ public class ResourcePackGroupScreen extends Screen {
             if (this.getSelectedOrNull() != null) {
                 text = text.formatted(Formatting.UNDERLINE);
             }
-            context.drawText(this.client.textRenderer, text, x + this.width / 2 - this.client.textRenderer.getWidth(text) / 2, Math.min(this.top + 3, y), 0xFFFFFF, false);
+            context.drawText(this.client.textRenderer, text, x + this.width / 2 - this.client.textRenderer.getWidth(text) / 2, Math.min(this.getY() + 3, y), 0xFFFFFF, false);
         }
 
         private void initProfiles() {
@@ -432,7 +437,7 @@ public class ResourcePackGroupScreen extends Screen {
                 if (this == packEntry) {
                     name = name.copy().formatted(Formatting.UNDERLINE);
                 }
-                context.drawCenteredTextWithShadow(ResourcePackGroupScreen.this.textRenderer, trimTextToWidth(client, name, ResourcePackGroupScreen.this.width / 5 * 2), ResourcePackListWidget.this.left + ResourcePackListWidget.this.width / 2, y + 1, 0xFFFFFF);
+                context.drawCenteredTextWithShadow(ResourcePackGroupScreen.this.textRenderer, trimTextToWidth(client, name, ResourcePackGroupScreen.this.width / 5 * 2), ResourcePackListWidget.this.getX() + ResourcePackListWidget.this.width / 2, y + 1, 0xFFFFFF);
             }
 
             @Override
@@ -477,7 +482,7 @@ public class ResourcePackGroupScreen extends Screen {
         private final Text title;
 
         public ResourcePackGroupListWidget(MinecraftClient client, Text title) {
-            super(client, ResourcePackGroupScreen.this.width / 5, ResourcePackGroupScreen.this.height, 32, ResourcePackGroupScreen.this.height - 65 + 4, 18);
+            super(client, ResourcePackGroupScreen.this.width / 5, ResourcePackGroupScreen.this.height - 65 + 4 - 32, 32, 18);
             this.title = title;
             initGroups();
             this.setRenderHeader(true, (int) (9.0f * 1.5f));
@@ -486,7 +491,7 @@ public class ResourcePackGroupScreen extends Screen {
         @Override
         protected void renderHeader(DrawContext context, int x, int y) {
             MutableText text = Text.empty().append(this.title).formatted(Formatting.UNDERLINE, Formatting.BOLD);
-            context.drawText(this.client.textRenderer, text, x + this.width / 2 - this.client.textRenderer.getWidth(text) / 2, Math.min(this.top + 3, y), 0xFFFFFF, false);
+            context.drawText(this.client.textRenderer, text, x + this.width / 2 - this.client.textRenderer.getWidth(text) / 2, Math.min(this.getY() + 3, y), 0xFFFFFF, false);
         }
 
         public void resetGroups() {

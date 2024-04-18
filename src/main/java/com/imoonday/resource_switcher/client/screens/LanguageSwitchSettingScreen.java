@@ -65,6 +65,7 @@ public class LanguageSwitchSettingScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         this.languageSwitchSettingList.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 16, 0xFFFFFF);
         LanguageSwitchSettingListWidget.LanguageEntry languageEntry = this.languageSwitchSettingList.getSelectedOrNull();
@@ -72,7 +73,6 @@ public class LanguageSwitchSettingScreen extends Screen {
             Text text = Text.translatable("screen.resource_switcher.languageSwitchSetting.mainLanguage").append(getOrEmpty(Config.SETTINGS.mainLanguage)).append(ScreenTexts.SPACE).append(Text.translatable("screen.resource_switcher.languageSwitchSetting.alternateLanguage").append(getOrEmpty(Config.SETTINGS.alternateLanguage))).formatted(Formatting.GRAY);
             context.drawCenteredTextWithShadow(this.textRenderer, text, this.width / 2, this.height - 56, 0x808080);
         }
-        super.render(context, mouseX, mouseY, delta);
     }
 
     private Text getOrEmpty(String code) {
@@ -80,10 +80,15 @@ public class LanguageSwitchSettingScreen extends Screen {
         return definition != null ? definition.getDisplayText() : Text.empty();
     }
 
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackgroundTexture(context);
+    }
+
     @Environment(value = EnvType.CLIENT)
     class LanguageSwitchSettingListWidget extends AlwaysSelectedEntryListWidget<LanguageSwitchSettingListWidget.LanguageEntry> {
         public LanguageSwitchSettingListWidget(MinecraftClient client) {
-            super(client, LanguageSwitchSettingScreen.this.width, LanguageSwitchSettingScreen.this.height, 32, LanguageSwitchSettingScreen.this.height - 65 + 4, 18);
+            super(client, LanguageSwitchSettingScreen.this.width, LanguageSwitchSettingScreen.this.height - 65 + 4 - 32, 32, 18);
             String string = LanguageSwitchSettingScreen.this.languageManager.getLanguage();
             LanguageSwitchSettingScreen.this.languageManager.getAllLanguages().forEach((languageCode, languageDefinition) -> {
                 LanguageSwitchSettingScreen.LanguageSwitchSettingListWidget.LanguageEntry languageEntry = new LanguageSwitchSettingScreen.LanguageSwitchSettingListWidget.LanguageEntry(languageCode, languageDefinition);
@@ -105,11 +110,6 @@ public class LanguageSwitchSettingScreen extends Screen {
         @Override
         public int getRowWidth() {
             return super.getRowWidth() + 50;
-        }
-
-        @Override
-        protected void renderBackground(DrawContext context) {
-            LanguageSwitchSettingScreen.this.renderBackground(context);
         }
 
         @Environment(value = EnvType.CLIENT)
